@@ -86,8 +86,9 @@ def writeServiceFunction(function, serviceJsFile, serviceVarName, typesMap):
     serviceJsFile.write("      deferred.reject(new Error(msg));\n")
     serviceJsFile.write("    };\n")
     serviceJsFile.write('\n')
-    serviceJsFile.write("    var requestPromise = client.makeThriftRequest('" + functionName
-                        + "', " + argumentsString + ");\n")
+    argumentNames.insert(0,"'"+functionName+"'")
+    argumentsString = ", ".join(argumentNames)
+    serviceJsFile.write("    var requestPromise = client.makeThriftRequest(" + argumentsString + ");\n")
     serviceJsFile.write('\n')
     serviceJsFile.write("    requestPromise.then(successCallback, errorCallback);\n")
     serviceJsFile.write('\n')
