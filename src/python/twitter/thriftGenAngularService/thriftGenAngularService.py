@@ -38,8 +38,9 @@ def main(args, options):
     thriftJson = thrift_json_encoder.thrift_to_json(program)
     unpickled = jsonpickle.decode(thriftJson)
     print('JSON decode was success.')
-    for service in unpickled['services']:
-        writeAngularService(outputPath, service, unpickled['typeRegistry']['idToType'], angularModule)
+    if 'services' in unpickled:
+        for service in unpickled['services']:
+            writeAngularService(outputPath, service, unpickled['typeRegistry']['idToType'], angularModule)
 
 
 def writeServiceFunction(function, serviceJsFile, serviceVarName, typesMap):
