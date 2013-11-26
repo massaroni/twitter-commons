@@ -38,7 +38,7 @@ def main(args, options):
     thriftJson = thrift_json_encoder.thrift_to_json(program)
     unpickled = jsonpickle.decode(thriftJson)
     print('JSON decode was success.')
-    if 'services' in unpickled:
+    if 'services' in unpickled.keys():
         for service in unpickled['services']:
             writeAngularService(outputPath, service, unpickled['typeRegistry']['idToType'], angularModule)
 
@@ -69,9 +69,13 @@ def writeServiceFunction(function, serviceJsFile, serviceVarName, typesMap):
     serviceJsFile.write('\n')
     serviceJsFile.write('    var deferred = $q.defer();\n')
     serviceJsFile.write('\n')
-    returnObjName = firstLower(typesMap[function['returnTypeId']]['simpleType']['typeref']['typeAlias'])
-    if '.' in returnObjName:
-        returnObjName = returnObjName.split('.')[1]
+    returnObjName = ''
+    if 'typeref' in typesMap[function['returnTypeId']]['simpleType'].keys():
+        returnObjName = firstLower(typesMap[function['returnTypeId']]['simpleType']['typeref']['typeAlias'])
+        if '.' in returnObjName:
+            returnObjName = returnObjName.split('.')[1]
+    else:
+        returnObjName = 'response'    
     serviceJsFile.write('    var successCallback = function(' + returnObjName + ') {\n')
     serviceJsFile.write("      $log.debug('" + functionName + " Success!');\n")
     serviceJsFile.write("      deferred.resolve(" + returnObjName + ");\n")
