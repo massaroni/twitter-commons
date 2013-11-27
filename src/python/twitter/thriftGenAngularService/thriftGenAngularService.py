@@ -36,7 +36,7 @@ def main(args, options):
 
     thriftJSON = parseThriftToJSON(inputfile)
 
-    includesMap = getIncludes(thriftJSON, includesDir)
+    includesMap = getIncludes(thriftJSON, inputfile, includesDir)
 
     if 'services' in thriftJSON.keys():
         for service in thriftJSON['services']:
@@ -58,12 +58,19 @@ def parseThriftToJSON(inputfile):
     return unpickled
 
 
-def getIncludes(thriftJSON, includesDir):
+def getIncludes(thriftJSON, inputfile, includesDir):
+    lastSlashIndex = inputfile.rfind('/')
+    inputFileDir = inputfile[0:lastSlashIndex+1]
     includes = {}
     if 'includes' in thriftJSON.keys():
         for include in thriftJSON['includes']:
             includePath = include['path']
-            includeJSON = parseThriftToJSON(includesDir + includePath)
+            # if there are no slashes in the include file then that means its in the same directory as the currently
+            # parsed thrift file
+            if includePath.count('/') is 0:
+                includeJSON = parseThriftToJSON(inputFileDir + includePath)
+            else:
+                includeJSON = parseThriftToJSON(includesDir + includePath)
             thriftName = includePath.split('.')[0].split('/')[-1]
             includes[thriftName] = includeJSON
     return includes
