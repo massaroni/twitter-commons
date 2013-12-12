@@ -2,6 +2,8 @@ import sys
 import jsonpickle
 import os
 
+# you can run this with pants like this:  ./pants py src/python/twitter/thriftGenAngularService:thriftGenAngularService
+
 from twitter.common import app
 from twitter.thrift.text import thrift_json_encoder
 from twitter.thrift.descriptors.thrift_parser import ThriftParser
@@ -228,9 +230,11 @@ def writeSuccessCallback(function, functionName, serviceJsFile, thriftJSON):
 
 
 def writeErrorCallback(functionName, serviceJsFile):
-    serviceJsFile.write('    var errorCallback = function() {\n')
-    serviceJsFile.write("      var msg = '" + functionName + " Failed! status:' + status;\n")
-    serviceJsFile.write("      deferred.reject(new Error(msg));\n")
+    serviceJsFile.write('    var errorCallback = function(failReason) {\n')
+    serviceJsFile.write("      var msg = '" + functionName + " Failed!';\n")
+    serviceJsFile.write("      var error = new Error(msg);\n")
+    serviceJsFile.write("      var reason = {reason: failReason, error: error};\n")
+    serviceJsFile.write("      deferred.reject(reason);\n")
     serviceJsFile.write("    };\n")
     serviceJsFile.write('\n')
 
