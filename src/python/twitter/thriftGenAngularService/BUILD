@@ -1,3 +1,10 @@
+python_requirement_library(
+  name='jsonpickle',
+  requirements=[
+    python_requirement(requirement='jsonpickle'),
+  ]
+)
+
 python_binary(
   name = "thriftGenAngularService",
   source = "thriftGenAngularService.py",
@@ -5,6 +12,6 @@ python_binary(
     pants("src/python/twitter/common/app"),
     pants("src/python/twitter/thrift/descriptors"),
     pants("src/python/twitter/thrift/text"),
-    python_requirement('jsonpickle')
+    pants(":jsonpickle")
   ]
 )
