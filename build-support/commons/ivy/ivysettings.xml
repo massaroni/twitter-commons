@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+
 <!--
 =================================================================================================
 Copyright 2011 Twitter, Inc.
@@ -18,49 +19,23 @@ limitations under the License.
 -->
 
 <ivysettings>
-  <property name="ivy.cache.dir" value="${user.home}/.ivy2/twitter-commons" override="false"/>
-
   <macrodef name="_remote_resolvers">
     <chain returnFirst="true">
       <ibiblio name="maven2"
                m2compatible="true"
                usepoms="true"
-               root="http://mirrors.ibiblio.org/pub/mirrors/maven2/"/>
+               root="http://repo1.maven.org/maven2/"/>
 
       <ibiblio name="maven.twttr.com-maven"
                m2compatible="true"
                usepoms="true"
                root="http://maven.twttr.com/"/>
 
-      <ibiblio name="apache"
-               m2compatible="true"
-               usepoms="true"
-               root="https://repository.apache.org/content/groups/public/"/>
-
-      <ibiblio name="google-releases"
-               m2compatible="true"
-               usepoms="true"
-               root="https://oss.sonatype.org/content/repositories/google-releases/"/>
-
+      <!--  This is just for spy#spymemcached;2.8.1 -->
       <ibiblio name="jboss-public"
                m2compatible="true"
                usepoms="true"
                root="http://repository.jboss.org/nexus/content/groups/public/"/>
-
-      <ibiblio name="maven2-repository.dev.java.net"
-               m2compatible="true"
-               usepoms="true"
-               root="http://download.java.net/maven/2/"/>
-
-      <ibiblio name="gson"
-               m2compatible="true"
-               usepoms="true"
-               root="http://google-gson.googlecode.com/svn/mavenrepo"/>
-
-      <ibiblio name="couchbase"
-               m2compatible="true"
-               usepoms="true"
-               root="http://files.couchbase.com/maven2"/>
     </chain>
   </macrodef>
 </ivysettings>

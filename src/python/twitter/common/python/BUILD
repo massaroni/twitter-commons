@@ -14,52 +14,58 @@
 # limitations under the License.
 # ==================================================================================================
 
+import os
+
+python_requirement_library(
+  name='setuptools',
+  requirements=[
+    # Use any setuptools post-distribute merge.
+    python_requirement(requirement='setuptools>=1'),
+  ]
+)
+
 python_library(
-  name = "python",
-  sources = rglobs('*.py'),
+  name = 'python-source',
+  sources = globs('*.py') + globs('http/*.py'),
+  # Do not add dependencies as these are embedded in every pex.
   dependencies = [
-    python_requirement('distribute'),
-    pants('src/python/twitter/common'),
+    pants(':setuptools'),
+  ],
+)
+
+
+with open(os.path.join(buildfile_path(), 'CHANGES')) as fp:
+  LONG_DESCRIPTION = fp.read()
+
+
+python_library(
+  name = 'python',
+  dependencies = [
+    pants(':python-source'),
   ],
   provides = setup_py(
     name = 'twitter.common.python',
-    version = '0.0.0',
-    description = "Twitter's Python interoperability libraries.",
-    long_description = """
-Twitter's Python interoperability libraries.  Includes support for package
-fetching, building, installing, "distillation" into eggs, a recursive
-zipimport implementation and Twitter's "PEX" standalone Python packaging
-environment.
-""",
-    namespace_packages = [
-      'twitter',
-      'twitter.common'
+    version = '0.6.0',
+    description = "Twitter's Python packaging toolchain.",
+    long_description = LONG_DESCRIPTION,
+    url = 'https://github.com/twitter/commons/tree/master/src/python/twitter/common/python',
+    license = 'Apache License, Version 2.0',
+    zip_safe = True,
+    classifiers = [
+      'Intended Audience :: Developers',
+      'License :: OSI Approved :: Apache Software License',
+      'Operating System :: OS Independent',
+      'Programming Language :: Python',
     ]
+  ).with_binaries(
+    pex = pants('src/python/twitter/common/python/bin:pex'),
   )
-)
-
-python_binary(
-  name = 'distiller',
-  source = 'distiller.py',
-  dependencies = [
-    pants('src/python/twitter/common/app'),
-    pants('src/python/twitter/common/log'),
-    pants(':python'),
-  ]
-)
-
-python_binary(
-  name = 'pex',
-  entry_point = 'twitter.common.python.pex_builder:main',
-  dependencies = [
-    pants(':python')
-  ]
 )
 
 page(name = 'pexreadme',
   source = 'README.md',
   dependencies = [
-    pants(':pexinstall')
+    pants(':pexinstall'),
   ]
 )
 

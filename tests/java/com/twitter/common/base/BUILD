@@ -14,17 +14,15 @@
 # limitations under the License.
 # ==================================================================================================
 
-from glob import glob
-
 java_tests(name = 'base',
   dependencies = [
-    '3rdparty:easymock',
-    '3rdparty:guava',
-    '3rdparty:junit',
-    'src/java/com/twitter/common/base',
-    'src/java/com/twitter/common/quantity',
-    'src/java/com/twitter/common/testing',
-    'src/java/com/twitter/common/util:testing',
+    pants('3rdparty/jvm/org/easymock'),
+    pants('3rdparty/jvm/com/google/guava'),
+    pants('3rdparty/jvm/junit'),
+    pants('src/java/com/twitter/common/base'),
+    pants('src/java/com/twitter/common/quantity'),
+    pants('src/java/com/twitter/common/testing/easymock'),
+    pants('src/java/com/twitter/common/util:testing'),
   ],
-  sources = glob('*.java'),
+  sources = globs('*.java'),
 )

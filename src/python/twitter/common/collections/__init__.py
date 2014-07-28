@@ -14,9 +14,11 @@
 # limitations under the License.
 # ==================================================================================================
 
+from sys import version_info
+
 from twitter.common.lang import Compatibility
 
-if Compatibility.PY2:
+if version_info[0] == 2:
   from .ordereddict import OrderedDict
 else:
   from collections import OrderedDict
@@ -28,7 +30,7 @@ def maybe_list(value, expected_type=Compatibility.string, raise_type=ValueError)
   """Given a value that could be a single value or iterable of a particular type, always return a
   list of that type.
 
-  By default the expected type is a string, but can be specified with the 'expected_type' kwarg,
+  By default the expected type is a string/unicode, but can be specified with the 'expected_type' kwarg,
   which can be a type or tuple of types.
 
   By default raises ValueError on 'expected_type' mismatch, but can be specified with the
@@ -41,11 +43,14 @@ def maybe_list(value, expected_type=Compatibility.string, raise_type=ValueError)
     return [value]
   elif isinstance(value, Iterable):
     real_values = list(value)
-    if not all(isinstance(v, expected_type) for v in real_values):
-      raise raise_type('Element of list is not of type ' + repr(expected_type))
+    for v in real_values:
+      if not isinstance(v, expected_type):
+        raise raise_type('Expected elements of list to be %r, got value %s of type %r' %
+                         (expected_type, v, type(v)))
     return real_values
   else:
-    raise raise_type('Value must be a %r or iterable of %r' % (expected_type, expected_type))
+    raise raise_type('Value must be of type %r or iterable of type %r' %
+                     (expected_type, expected_type))
 
 
 __all__ = (

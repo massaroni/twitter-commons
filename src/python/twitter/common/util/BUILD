@@ -19,5 +19,19 @@ python_library(
   sources = globs('*.py'),
   dependencies = [
     pants('src/python/twitter/common/contextutil')
-  ]
+  ],
+  provides = setup_py(
+    name = 'twitter.common.util',
+    version = commons_version(),
+    description = 'twitter.common commands wrapper.',
+    url = 'https://github.com/twitter/commons',
+    license = 'Apache License, Version 2.0',
+    zip_safe = True,
+    classifiers = [
+      'Intended Audience :: Developers',
+      'License :: OSI Approved :: Apache Software License',
+      'Operating System :: OS Independent',
+      'Programming Language :: Python',
+    ]
+  )
 )

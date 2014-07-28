@@ -14,58 +14,61 @@
 # limitations under the License.
 # ==================================================================================================
 
-TEXT_SOURCES = [ 'TextResponseHandler.java' ]
+TEXT_SOURCES = ['TextResponseHandler.java']
 
-STRING_TEMPLATE_SOURCES = [ 'StringTemplateServlet.java' ]
+STRING_TEMPLATE_SOURCES = ['StringTemplateServlet.java']
 
-THRIFT_SOURCES = [ 'ThriftServlet.java' ]
+THRIFT_SOURCES = ['ThriftServlet.java']
 
-TIME_SERIES_SOURCES = [ 'TimeSeriesDataSource.java' ]
+TIME_SERIES_SOURCES = ['TimeSeriesDataSource.java']
 
-PARAMS_SOURCES = [ 'HttpServletRequestParams.java' ]
+PARAMS_SOURCES = ['HttpServletRequestParams.java']
 
-java_library(name = 'text',
-  provides = artifact(
-    org = 'com.twitter.common',
-    name = 'net-http-handlers-text',
-    repo = 'build-support/commons/ivy:public',
+java_library(
+  name='text',
+  provides=artifact(
+    org='com.twitter.common',
+    name='net-http-handlers-text',
+    repo='build-support/commons/ivy:public',
   ),
-  dependencies = [
-    '3rdparty:servlet-api',
+  dependencies=[
+    '3rdparty/jvm/javax/servlet:servlet-api',
   ],
-  sources = TEXT_SOURCES
+  sources=TEXT_SOURCES
 )
 
-java_library(name = 'string-template',
-  provides = artifact(
-    org = 'com.twitter.common',
-    name = 'net-http-handlers-string-template',
-    repo = 'build-support/commons/ivy:public',
+java_library(
+  name='string-template',
+  provides=artifact(
+    org='com.twitter.common',
+    name='net-http-handlers-string-template',
+    repo='build-support/commons/ivy:public',
   ),
-  dependencies = [
-    pants('3rdparty:guava'),
-    pants('3rdparty:guice'),
-    pants('3rdparty:servlet-api'),
-    pants('3rdparty:stringtemplate'),
+  dependencies=[
+    pants('3rdparty/jvm/com/google/guava'),
+    pants('3rdparty/jvm/com/google/inject:guice'),
+    pants('3rdparty/jvm/javax/servlet:servlet-api'),
+    pants('3rdparty/jvm/org/antlr:stringtemplate'),
     pants('src/java/com/twitter/common/base'),
     pants('src/java/com/twitter/common/util/templating'),
   ],
-  sources = STRING_TEMPLATE_SOURCES
+  sources=STRING_TEMPLATE_SOURCES
 )
 
-java_library(name = 'handlers',
-  provides = artifact(
-    org = 'com.twitter.common',
-    name = 'net-http-handlers',
-    repo = 'build-support/commons/ivy:public',
+java_library(
+  name='handlers',
+  provides=artifact(
+    org='com.twitter.common',
+    name='net-http-handlers',
+    repo='build-support/commons/ivy:public',
   ),
-  dependencies = [
-    pants('3rdparty:commons-codec'),
-    pants('3rdparty:gson'),
-    pants('3rdparty:guava'),
-    pants('3rdparty:guice'),
-    pants('3rdparty:servlet-api'),
-    pants('3rdparty:stringtemplate'),
+  dependencies=[
+    pants('3rdparty/jvm/commons-codec'),
+    pants('3rdparty/jvm/com/google/code/gson'),
+    pants('3rdparty/jvm/com/google/guava'),
+    pants('3rdparty/jvm/com/google/inject:guice'),
+    pants('3rdparty/jvm/javax/servlet:servlet-api'),
+    pants('3rdparty/jvm/org/antlr:stringtemplate'),
     pants(':params'),
     pants(':string-template'),
     pants(':text'),
@@ -73,63 +76,72 @@ java_library(name = 'handlers',
     pants('src/java/com/twitter/common/quantity'),
     pants('src/java/com/twitter/common/stats'),
   ],
-  sources = globs('*.java')
-    - TEXT_SOURCES - STRING_TEMPLATE_SOURCES - THRIFT_SOURCES - TIME_SERIES_SOURCES - PARAMS_SOURCES,
-
-  resources = [
-    'logconfig.st',
-    'logprinter.st',
+  sources=globs('*.java')
+      - TEXT_SOURCES
+      - STRING_TEMPLATE_SOURCES
+      - THRIFT_SOURCES
+      - TIME_SERIES_SOURCES
+      - PARAMS_SOURCES,
+  resources=[
+    pants('src/resources/com/twitter/common/net/http/handlers:log')
   ]
 )
 
-java_library(name = 'thrift',
-  provides = artifact(
-    org = 'com.twitter.common',
-    name = 'net-http-handlers-thrift',
-    repo = 'build-support/commons/ivy:public',
+java_library(
+  name='thrift',
+  provides=artifact(
+    org='com.twitter.common',
+    name='net-http-handlers-thrift',
+    repo='build-support/commons/ivy:public',
   ),
-  dependencies = [
-    # TODO(John Sirois): the only need is for the non-existent thrift:monitoring
-    '3rdparty:guava',
-    '3rdparty:guice',
-    '3rdparty:servlet-api',
-    '3rdparty:stringtemplate',
+  dependencies=[
+    '3rdparty/jvm/com/google/guava',
+    '3rdparty/jvm/com/google/inject:guice',
+    '3rdparty/jvm/javax/servlet:servlet-api',
+    '3rdparty/jvm/org/antlr:stringtemplate',
     'src/java/com/twitter/common/base',
+
+    # TODO(John Sirois): the only need is for the non-existent thrift:monitoring
     'src/java/com/twitter/common/thrift',
+
     ':string-template',
   ],
-  sources = THRIFT_SOURCES,
-  resources = [ 'thrift.st' ]
+  sources=THRIFT_SOURCES,
+  resources=[
+    pants('src/resources/com/twitter/common/net/http/handlers:thrift')
+  ]
 )
 
-java_library(name = 'time-series',
-  provides = artifact(
-    org = 'com.twitter.common',
-    name = 'net-http-handlers-time-series',
-    repo = 'build-support/commons/ivy:public',
+java_library(
+  name='time-series',
+  provides=artifact(
+    org='com.twitter.common',
+    name='net-http-handlers-time-series',
+    repo='build-support/commons/ivy:public',
   ),
-  dependencies = [
-    pants('3rdparty:gson'),
-    pants('3rdparty:guava'),
-    pants('3rdparty:guice'),
-    pants('3rdparty:servlet-api'),
+  dependencies=[
+    pants('3rdparty/jvm/com/google/code/gson'),
+    pants('3rdparty/jvm/com/google/guava'),
+    pants('3rdparty/jvm/com/google/inject:guice'),
+    pants('3rdparty/jvm/javax/servlet:servlet-api'),
     pants('src/java/com/twitter/common/collections'),
     pants('src/java/com/twitter/common/stats:time-series'),
   ],
-  sources = TIME_SERIES_SOURCES
+  sources=TIME_SERIES_SOURCES
 )
 
-java_library(name = 'params',
-  provides = artifact(
-    org = 'com.twitter.common',
-    name = 'net-http-handlers-params',
-    repo = pants('build-support/commons/ivy:public'),
+java_library(
+  name='params',
+  provides=artifact(
+    org='com.twitter.common',
+    name='net-http-handlers-params',
+    repo=pants('build-support/commons/ivy:public'),
   ),
-  dependencies = [
-    pants('3rdparty:guava'),
-    pants('3rdparty:guice'),
-    pants('3rdparty:jsr305'),
-    pants('3rdparty:servlet-api'),
+  dependencies=[
+    pants('3rdparty/jvm/com/google/guava'),
+    pants('3rdparty/jvm/com/google/inject:guice'),
+    pants('3rdparty/jvm/com/google/code/findbugs:jsr305'),
+    pants('3rdparty/jvm/javax/servlet:servlet-api'),
   ],
-  sources = PARAMS_SOURCES
+  sources=PARAMS_SOURCES
 )

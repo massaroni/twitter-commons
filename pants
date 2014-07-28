@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==================================================================================================
 # Copyright 2011 Twitter, Inc.
 # --------------------------------------------------------------------------------------------------
@@ -15,56 +15,14 @@
 # limitations under the License.
 # ==================================================================================================
 
-MY_DIR=$(dirname $0)
-VIRTUAL_PYTHON=$MY_DIR/.python/bootstrap
+source build-support/python/libvirtualenv.sh
 
-PANTS_EXE=$MY_DIR/src/python/twitter/pants/bin/pants_exe.py
+PIP_OPTIONS=(
+  --allow-external elementtree
+  --allow-unverified elementtree
+)
+setup_virtualenv pants pantsbuild.pants==0.0.21 ${PIP_OPTIONS[@]}
 
-PANTS_BOOTSTRAP_ARGS=${PANTS_BOOTSTRAP_ARGS:-''}
-
-MARKDOWN_EGG=$MY_DIR/3rdparty/python/Markdown-2.1.1-py2.6.egg
-PYGMENTS_EGG=$MY_DIR/3rdparty/python/Pygments-1.4-py2.6.egg
-PYSTACHE_EGG=$MY_DIR/3rdparty/python/pystache-0.5.3-py2.6.egg
-PYTHON_DAEMON_EGG=$MY_DIR/3rdparty/python/python_daemon-1.5.5-py2.6.egg
-
-function run_pants_bare() {
-  source $VIRTUAL_PYTHON/bin/activate
-  PYTHONPATH=$MARKDOWN_EGG:$PYGMENTS_EGG:$PYSTACHE_EGG:$PYTHON_DAEMON_EGG:$MY_DIR/src/python \
-    python $PANTS_BOOTSTRAP_ARGS $PANTS_EXE "$@"
-  result=$?
-  deactivate
-  return $((result))
-}
-
-if [ ! -e $VIRTUAL_PYTHON/bin/python ]; then
-  $MY_DIR/build-support/python/setup.sh
-  rc=$?
-  if [[ $rc != 0 ]]; then
-    echo "Unable to bootstrap a sane Python virtual environment for pants!"
-    rm -rf $VIRTUAL_PYTHON
-    exit $rc
-  fi
-  source $VIRTUAL_PYTHON/bin/activate
-  deactivate
-fi
-
-if [ -z "${PANTS_DEV}" -a ! -e $MY_DIR/pants.pex ]; then
-  run_pants_bare src/python/twitter/pants:pants
-  if [ ! -e $MY_DIR/dist/pants.pex ]; then
-    echo "Unable to build pants!  Cannot continue!"
-    exit 1
-  else
-    mv $MY_DIR/dist/pants.pex $MY_DIR/pants.pex
-    cp $MY_DIR/pants.pex $VIRTUAL_PYTHON/pants.pex
-  fi
-fi
-
-if [ ! -z "${PANTS_DEV}" ]; then
-  # TODO(John Sirois): ideally this would just use pants.pex to run the pants target in py mode:
-  # ./pants.pex py src/python/twitter/pants "$@"
-  echo "*** running pants in dev mode from $PANTS_EXE ***" 1>&2
-  run_pants_bare "$@"
-  exit $ret
-else
-  ${MY_DIR}/pants.pex "$@"
-fi
+# Enable local plugins
+export PYTHONPATH=pants-plugins/src/python
+exec pants "$@"

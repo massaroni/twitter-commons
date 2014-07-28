@@ -14,22 +14,23 @@
 # limitations under the License.
 # ==================================================================================================
 
-from glob import glob
-
-
 java_tests(name = 'stats',
   dependencies = [
-    pants('3rdparty:easymock'),
-    pants('3rdparty:guava'),
-    pants('3rdparty:junit'),
-    pants('3rdparty:mockito'),
+    pants('3rdparty/jvm/org/easymock'),
+    pants('3rdparty/jvm/com/google/guava'),
+    pants('3rdparty/jvm/junit'),
+    pants('3rdparty/jvm/org/mockito'),
+    pants('src/java/com/twitter/common/junit/annotations'),
     pants('src/java/com/twitter/common/quantity'),
+    pants('src/java/com/twitter/common/objectsize'),
     pants('src/java/com/twitter/common/stats'),
     pants('src/java/com/twitter/common/stats:time-series'),
     pants('src/java/com/twitter/common/stats:util'),
-    pants('src/java/com/twitter/common/testing'),
+    pants('src/java/com/twitter/common/stats/testing:histogram'),
+    pants('src/java/com/twitter/common/testing/easymock'),
+    pants('src/java/com/twitter/common/testing/mockito'),
     pants('src/java/com/twitter/common/util:system-mocks'),
     pants('src/java/com/twitter/common/util:testing'),
   ],
-  sources = glob('*.java')
+  sources = globs('*.java')
 )

@@ -1,12 +1,9 @@
 from .crawler import Crawler
-from .http import CachedWeb, Web
-from .link import EggLink, Link, SourceLink
+from .http import CachedWeb, FetchError, Web
 
 __all__ = (
   CachedWeb,
   Crawler,
-  EggLink,
-  Link,
-  SourceLink,
+  FetchError,
   Web,
 )

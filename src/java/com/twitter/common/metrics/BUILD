@@ -14,20 +14,19 @@
 # limitations under the License.
 # ==================================================================================================
 
-from glob import glob
-
-java_library(name = 'metrics',
-  provides = artifact(
-    org = 'com.twitter.common',
-    name = 'metrics',
-    repo = 'build-support/commons/ivy:public',
+java_library(name='metrics',
+  provides=artifact(
+    org='com.twitter.common',
+    name='metrics',
+    repo='build-support/commons/ivy:public',
   ),
   dependencies = [
-    '3rdparty:guava',
-    'src/java/com/twitter/common/base',
-    'src/java/com/twitter/common/quantity',
-    'src/java/com/twitter/common/stats:util',
-    'src/java/com/twitter/common/util:executor-service-shutdown',
+    pants('3rdparty/jvm/com/google/guava'),
+    pants('3rdparty/jvm/com/twitter:jsr166e'),
+    pants('src/java/com/twitter/common/base'),
+    pants('src/java/com/twitter/common/quantity'),
+    pants('src/java/com/twitter/common/stats:util'),
+    pants('src/java/com/twitter/common/util:executor-service-shutdown'),
   ],
-  sources = glob('*.java'),
+  sources=globs('*.java'),
 )

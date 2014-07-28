@@ -3,91 +3,92 @@ import errno
 import os
 import socket
 import threading
-import urllib2
 
-from twitter.common.contextutil import temporary_dir
 from twitter.common.lang import Compatibility
-from twitter.common.python.http import CachedWeb, Web
-from twitter.common.quantity import Amount, Time
+from twitter.common.python.common import safe_mkdtemp
+from twitter.common.python.http import CachedWeb, Web, FetchError
 from twitter.common.testing.clock import ThreadedClock
 
-import mox
 import pytest
 
 
-# py2 vs py3 facepalm
 if Compatibility.PY3:
+  from unittest import mock
   import urllib.error as urllib_error
   import urllib.parse as urlparse
   import urllib.request as urllib_request
+  URLLIB_REQUEST = 'urllib.request'
 else:
+  import mock
   import urllib2 as urllib_request
   import urllib2 as urllib_error
   import urlparse
+  URLLIB_REQUEST = 'urllib2'
 
 
-# things that still need testing:
-#    encoding of code + headers into .headers file
-#
+# TODO(wickman) things that still need testing: encoding of code + headers into .headers file
 
 
-def test_open_resolve_failure():
-  m = mox.Mox()
-  m.StubOutWithMock(socket, 'gethostbyname')
-  socket.gethostbyname('www.google.com').AndRaise(
-      socket.gaierror(errno.EADDRNOTAVAIL, 'Could not resolve host.'))
-  m.ReplayAll()
-  with pytest.raises(urllib_error.URLError):
+@mock.patch('socket.gethostbyname')
+def test_open_resolve_failure(gethostbyname_mock):
+  gethostbyname_mock.side_effect = socket.gaierror(errno.EADDRNOTAVAIL, 'Could not resolve host.')
+  with pytest.raises(FetchError):
     Web().open('http://www.google.com')
-  m.UnsetStubs()
-  m.VerifyAll()
 
 
 def test_resolve_timeout():
   event = threading.Event()
   class FakeWeb(Web):
-    NS_TIMEOUT = Amount(1, Time.MILLISECONDS)
+    NS_TIMEOUT_SECS = 0.001
     def _resolves(self, fullurl):
       event.wait()
     def _reachable(self, fullurl):
       return True
-  with pytest.raises(urllib_error.URLError):
+  with pytest.raises(FetchError):
     FakeWeb().open('http://www.google.com')
   # unblock anonymous thread
   event.set()
 
 
-def test_unreachable_error():
-  m = mox.Mox()
-  m.StubOutWithMock(socket, 'gethostbyname')
-  m.StubOutWithMock(socket, 'create_connection')
-  socket.gethostbyname('www.google.com').AndReturn('1.2.3.4')
-  socket.create_connection(('www.google.com', 80), timeout=mox.IgnoreArg()).AndRaise(
-      socket.error(errno.ENETUNREACH, 'Could not reach network.'))
-  m.ReplayAll()
-  with pytest.raises(urllib_error.URLError):
+@mock.patch('socket.gethostbyname')
+@mock.patch('socket.create_connection')
+def test_unreachable_error(create_connection_mock, gethostbyname_mock):
+  gethostbyname_mock.return_value = '1.2.3.4'
+  create_connection_mock.side_effect = socket.error(errno.ENETUNREACH,
+      'Could not reach network.')
+  with pytest.raises(FetchError):
     Web().open('http://www.google.com')
-  m.UnsetStubs()
-  m.VerifyAll()
+  gethostbyname_mock.assert_called_once_with('www.google.com')
 
 
-def test_local_open():
-  m = mox.Mox()
-  m.StubOutWithMock(urllib_request, 'urlopen')
-  urllib_request.urlopen('file:///local/filename').AndReturn('data')
-  m.ReplayAll()
-  assert Web().open('/local/filename') == 'data'
-  m.UnsetStubs()
-  m.VerifyAll()
+@mock.patch('%s.urlopen' % URLLIB_REQUEST)
+def test_local_open(urlopen_mock):
+  urlopen_mock.return_value = b'data'
+  assert Web().open('/local/filename') == b'data'
+
+
+def test_local_cached_open():
+  cache = safe_mkdtemp()
+  web = CachedWeb(cache=cache)
+
+  source_dir = safe_mkdtemp()
+  source = os.path.join(source_dir, 'filename')
+  with open(source, 'wb') as fp:
+    fp.write(b'data')
+
+  with contextlib.closing(web.open(source)) as cached_fp1:
+    assert b'data' == cached_fp1.read()
+  with contextlib.closing(web.open(source)) as cached_fp2:
+    assert b'data' == cached_fp2.read()
 
 
 def test_maybe_local():
   maybe_local = Web().maybe_local_url
   assert maybe_local('http://www.google.com') == 'http://www.google.com'
   assert maybe_local('https://www.google.com/whatever') == 'https://www.google.com/whatever'
-  assert maybe_local('tmp/poop.txt') == 'file://tmp/poop.txt'
-  assert maybe_local('/tmp/poop.txt') == 'file:///tmp/poop.txt'
-  assert maybe_local('www.google.com') == 'file://www.google.com'
+  assert maybe_local('tmp/poop.txt') == 'file://' + os.path.realpath('tmp/poop.txt')
+  assert maybe_local('/tmp/poop.txt') == 'file://' + os.path.realpath('/tmp/poop.txt')
+  assert maybe_local('www.google.com') == 'file://' + os.path.realpath('www.google.com')
 
 
 class MockOpener(object):
@@ -103,7 +104,7 @@ class MockOpener(object):
     self.opened.clear()
 
   def open(self, url, conn_timeout=None):
-    if conn_timeout and conn_timeout == Amount(0, Time.SECONDS):
+    if conn_timeout == 0:
       raise urllib_error.URLError('Could not reach %s within deadline.' % url)
     if url.startswith('http'):
       self.opened.set()
@@ -120,21 +121,19 @@ def test_connect_timeout_using_open():
   opener = MockOpener(DATA)
   web = CachedWeb(clock=clock, opener=opener)
   assert not os.path.exists(web.translate_url(URL))
-  with pytest.raises(urllib_error.URLError):
-    with contextlib.closing(web.open(URL, conn_timeout=Amount(0, Time.SECONDS))):
+  with pytest.raises(FetchError):
+    with contextlib.closing(web.open(URL, conn_timeout=0)):
       pass
-  with contextlib.closing(web.open(URL, conn_timeout=Amount(10, Time.MILLISECONDS))) as fp:
+  with contextlib.closing(web.open(URL, conn_timeout=0.01)) as fp:
     assert fp.read() == DATA
 
 
-def test_caching():
+@mock.patch('os.path.getmtime')
+def test_caching(getmtime_mock):
   URL = 'http://www.google.com'
   DATA = b'This is google.com!'
   clock = ThreadedClock()
-  m = mox.Mox()
-  m.StubOutWithMock(os.path, 'getmtime')
-  os.path.getmtime(mox.IgnoreArg()).MultipleTimes().AndReturn(0)
-  m.ReplayAll()
+  getmtime_mock.return_value = 0
 
   opener = MockOpener(DATA)
   web = CachedWeb(clock=clock, opener=opener)
@@ -156,6 +155,3 @@ def test_caching():
   with contextlib.closing(web.open(URL, ttl=0.5)) as fp:
     assert fp.read() == DATA
   assert opener.opened.is_set(), 'expect expired url to cause http get'
-
-  m.UnsetStubs()
-  m.VerifyAll()

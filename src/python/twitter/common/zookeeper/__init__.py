@@ -14,6 +14,3 @@
 # limitations under the License.
 # ==================================================================================================
 
-from .client import ZooKeeper
-
-__all__ = ['ZooKeeper']

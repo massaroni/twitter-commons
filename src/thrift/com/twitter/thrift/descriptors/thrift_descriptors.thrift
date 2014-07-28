@@ -15,6 +15,7 @@
 // =================================================================================================
 
 namespace java com.twitter.thrift.descriptors
+#@namespace scala com.twitter.thrift.descriptors.thriftscala
 namespace py gen.twitter.thrift.descriptors
 namespace rb Thriftutils.Descriptors
 
@@ -83,9 +84,9 @@ struct MapType {
 // regular struct, and we enforce the union constraint in code.
 // TODO: Add Python support for 'union' in the Thrift compiler.
 union SimpleContainerType {
-  1: optional ListType listType,
-  2: optional SetType setType,
-  3: optional MapType mapType
+  1: ListType listType,
+  2: SetType setType,
+  3: MapType mapType
 }
 
 struct ContainerType {
@@ -103,9 +104,9 @@ struct Typeref {
 // regular struct, and we enforce the union constraint in code.
 // TODO: Add Python support for 'union' in the Thrift compiler.
 union SimpleType {
-  1: optional BaseType baseType,
-  2: optional ContainerType containerType,
-  3: optional Typeref typeref
+  1: BaseType baseType,
+  2: ContainerType containerType,
+  3: Typeref typeref
 }
 
 struct Type {
@@ -115,8 +116,7 @@ struct Type {
 
 struct Typedef {
   1: required string typeId,
-  2: required string typeAlias,
-  99: optional list<Annotation> annotations = []
+  2: required string typeAlias
 }
 
 // A registry of all the types referenced in a thrift program.
@@ -146,14 +146,12 @@ struct Const {
 
 struct EnumElement {
   1: required string name,
-  2: required i32 value,
-  99: optional list<Annotation> annotations = []
+  2: required i32 value
 }
 
 struct Enum {
   1: required string name,
-  2: required list<EnumElement> elements,
-  99: optional list<Annotation> annotations = []
+  2: required list<EnumElement> elements
 }
 
 
@@ -187,8 +185,7 @@ struct Union {
 
 struct Exception {
   1: required string name,
-  2: required list<Field> fields,
-  99: optional list<Annotation> annotations = []
+  2: required list<Field> fields
 }
 
 
@@ -199,15 +196,13 @@ struct Function {
   2: optional string returnTypeId,  // Unspecified means void.
   3: optional bool oneWay = 0,  // Thrift doesn't allow 'false'/'true' when specifying the default.
   4: required list<Field> argz,
-  5: required list<Field> throwz,
-  99: optional list<Annotation> annotations = []
+  5: required list<Field> throwz
 }
 
 struct Service {
   1: required string name,
   2: optional string extendz,
-  3: required list<Function> functions,
-  99: optional list<Annotation> annotations = []
+  3: required list<Function> functions
 }
 
 

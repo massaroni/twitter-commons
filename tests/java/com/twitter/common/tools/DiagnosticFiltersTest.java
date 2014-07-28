@@ -15,14 +15,14 @@ import com.google.common.collect.ImmutableList;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
-import com.twitter.common.testing.EasyMockTest;
+import com.twitter.common.testing.easymock.EasyMockTest;
 import com.twitter.common.tools.DiagnosticFilters.DiagnosticFilter;
 import com.twitter.common.tools.DiagnosticFilters.Guard;
 import com.twitter.common.tools.DiagnosticFilters.Treatment;
 
 import static org.easymock.EasyMock.expect;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class DiagnosticFiltersTest extends EasyMockTest {
 

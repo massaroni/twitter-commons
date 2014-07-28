@@ -14,21 +14,50 @@
 # limitations under the License.
 # ==================================================================================================
 
-
 python_test_suite(name = 'all',
   dependencies = [
     pants('tests/python/twitter/common/python/http:all'),
-    pants(':test_nested'),
+    pants(':test_environment'),
+    pants(':test_finders'),
+    pants(':test_interpreter'),
     pants(':test_obtainer'),
+    pants(':test_package'),
+    pants(':test_pep425'),
     pants(':test_platform'),
-    pants(':test_pex_builder_main'),
+    pants(':test_pex'),
+    pants(':test_pex_builder'),
+    pants(':test_util'),
   ]
 )
 
-python_tests(name = 'test_nested',
-  sources = ['test_nested.py'],
+python_tests(name = 'test_environment',
+  sources = ['test_environment.py'],
   dependencies = [
+    pants('src/python/twitter/common/contextutil'),
     pants('src/python/twitter/common/python')
+  ]
+)
+
+python_requirement_library(
+  name='mock',
+  requirements=[
+    python_requirement(requirement='mock', version_filter=lambda py, plat: py.startswith('2')),
+  ]
+)
+
+python_tests(name = 'test_finders',
+  sources = ['test_finders.py'],
+  dependencies = [
+    pants(':mock'),
+    pants('src/python/twitter/common/python'),
+  ]
+)
+
+python_tests(name = 'test_interpreter',
+  sources = ['test_interpreter.py'],
+  dependencies = [
+    pants('3rdparty/python:mock'),
+    pants('src/python/twitter/common/python'),
   ]
 )
 
@@ -39,6 +68,21 @@ python_tests(name = 'test_obtainer',
   ]
 )
 
+python_tests(name = 'test_package',
+  sources = ['test_package.py'],
+  dependencies = [
+    pants('src/python/twitter/common/contextutil'),
+    pants('src/python/twitter/common/python'),
+  ]
+)
+
+python_tests(name = 'test_pep425',
+  sources = ['test_pep425.py'],
+  dependencies = [
+    pants('src/python/twitter/common/python'),
+  ]
+)
+
 python_tests(name = 'test_platform',
   sources = ['test_platform.py'],
   dependencies = [
@@ -46,10 +90,34 @@ python_tests(name = 'test_platform',
   ]
 )
 
-python_tests(name = 'test_pex_builder_main',
-  sources = ['test_pex_builder_main.py'],
+python_tests(name = 'test_pex',
+  sources = ['test_pex.py'],
   dependencies = [
+    pants('src/python/twitter/common/contextutil'),
     pants('src/python/twitter/common/python'),
-    pants('src/python/twitter/common/python:pex')
+  ]
+)
+
+python_tests(name = 'test_pex_builder',
+  sources = ['test_pex_builder.py'],
+  dependencies = [
+    pants('src/python/twitter/common/contextutil'),
+    pants('src/python/twitter/common/python'),
+  ]
+)
+
+python_requirement_library(
+  name='wheel',
+  requirements=[
+    python_requirement(requirement='wheel'),
+  ]
+)
+
+python_tests(name = 'test_util',
+  sources = ['test_util.py'],
+  dependencies = [
+    pants(':wheel'),
+    pants('src/python/twitter/common/contextutil'),
+    pants('src/python/twitter/common/python'),
   ]
 )

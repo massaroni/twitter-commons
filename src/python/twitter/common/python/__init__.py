@@ -14,19 +14,3 @@
 # limitations under the License.
 # ==================================================================================================
 
-__author__ = 'Brian Wickman'
-
-from .importer import (
-  builtin_zipimport,
-  monkeypatch,
-  monkeypatch_zipimport,
-  monkeypatch_pkg_resources,
-  EggZipImporter)
-
-__all__ = (
-  'builtin_zipimport',
-  'monkeypatch',
-  'monkeypatch_pkg_resources',
-  'monkeypatch_zipimport',
-  'EggZipImporter',
-)

@@ -4,6 +4,8 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.util.List;
 
+import javax.inject.Qualifier;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Guice;
@@ -19,10 +21,10 @@ import com.twitter.common.inject.Bindings.KeyFactory;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class BindingsTest {
 
@@ -32,6 +34,10 @@ public class BindingsTest {
   @Retention(RUNTIME)
   @BindingAnnotation
   @interface BindKey { }
+
+  @Retention(RUNTIME)
+  @Qualifier
+  @interface QualifierKey { }
 
   @Test
   public void testCheckBindingAnnotation() {
@@ -78,10 +84,17 @@ public class BindingsTest {
   }
 
   @Test
+  public void testAnnotationKeyFactoryJsr330() {
+    KeyFactory factory = Bindings.annotatedKeyFactory(NAME_KEY);
+    assertEquals(Key.get(String.class, NAME_KEY), factory.create(String.class));
+    assertEquals(Key.get(STRING_LIST, NAME_KEY), factory.create(STRING_LIST));
+  }
+
+  @Test
   public void testAnnotationTypeKeyFactory() {
-    KeyFactory factory = Bindings.annotatedKeyFactory(BindKey.class);
-    assertEquals(Key.get(String.class, BindKey.class), factory.create(String.class));
-    assertEquals(Key.get(STRING_LIST, BindKey.class), factory.create(STRING_LIST));
+    KeyFactory factory = Bindings.annotatedKeyFactory(QualifierKey.class);
+    assertEquals(Key.get(String.class, QualifierKey.class), factory.create(String.class));
+    assertEquals(Key.get(STRING_LIST, QualifierKey.class), factory.create(STRING_LIST));
   }
 
   @Test

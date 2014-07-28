@@ -1,22 +1,18 @@
 import contextlib
-import errno
 from functools import partial
 import os
 import re
 import threading
 
-from twitter.common.lang import Compatibility
-
-from .http import CachedWeb, Web
+from ..compatibility import PY3
+from .http import CachedWeb, Web, FetchError
 from .tracer import TRACER
 
-if Compatibility.PY3:
+if PY3:
   from queue import Empty, Queue
-  import urllib.error as urllib_error
   from urllib.parse import urlparse, urljoin
 else:
   from Queue import Empty, Queue
-  import urllib2 as urllib_error
   from urlparse import urlparse, urljoin
 
 
@@ -30,7 +26,7 @@ class CrawlerBase(object):
   def opener(self):
     return self._opener
 
-  def crawl(self, *urls):
+  def crawl(self, urls, follow_links=False):
     links, seen = set(), set()
     queue = Queue()
     converged = threading.Event()
@@ -45,9 +41,10 @@ class CrawlerBase(object):
           seen.add(url)
           hrefs, rel_hrefs = self.execute(url)
           links.update(hrefs)
-          for href in rel_hrefs:
-            if href not in seen:
-              queue.put(href)
+          if follow_links:
+            for href in rel_hrefs:
+              if href not in seen:
+                queue.put(href)
         queue.task_done()
 
     for url in urls:
@@ -136,7 +133,7 @@ class Crawler(CrawlerBase):
     try:
       with contextlib.closing(self._open(url, conn_timeout=self._conn_timeout)) as index_fp:
         index_content = self.decode_page(index_fp)
-    except urllib_error.URLError as e:
+    except FetchError as e:
       TRACER.log('Failed to fetch %s: %s' % (url, e))
       return set(), set()
     links = set(urljoin(url, link) for link in PageParser.links(index_content))

@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -36,8 +37,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Ranges;
-import com.google.common.io.NullOutputStream;
+import com.google.common.io.ByteStreams;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -115,13 +115,15 @@ public class ArgScannerTest {
     static final Arg<Double> DOUBLE_VAL = Arg.create(0D);
     @CmdLine(name = "bool", help = "help")
     static final Arg<Boolean> BOOL = Arg.create(false);
+    @CmdLine(name = "regex", help = "help")
+    static final Arg<Pattern> REGEX = Arg.create(null);
     @CmdLine(name = "time_amount", help = "help")
     static final Arg<Amount<Long, Time>> TIME_AMOUNT = Arg.create(Amount.of(1L, Time.SECONDS));
     @CmdLine(name = "data_amount", help = "help")
     static final Arg<Amount<Long, Data>> DATA_AMOUNT = Arg.create(Amount.of(1L, Data.MB));
     @CmdLine(name = "range", help = "help")
     static final Arg<com.google.common.collect.Range<Integer>> RANGE =
-        Arg.create(Ranges.closed(1, 5));
+        Arg.create(com.google.common.collect.Range.closed(1, 5));
     @Positional(help = "help")
     static final Arg<List<Amount<Long, Time>>> POSITIONAL =
         Arg.<List<Amount<Long, Time>>>create(ImmutableList.<Amount<Long, Time>>of());
@@ -193,6 +195,13 @@ public class ArgScannerTest {
         "bool", "");
     test(StandardArgs.class,
         new Command() {
+          @Override public void execute() {
+            assertThat(StandardArgs.REGEX.get().matcher("jack").matches(), is(true));
+          }
+        },
+        "regex", ".*ack$");
+    test(StandardArgs.class,
+        new Command() {
           @Override public void execute() { assertThat(StandardArgs.BOOL.get(), is(false)); }
         },
         "no_bool", "");
@@ -218,7 +227,7 @@ public class ArgScannerTest {
     test(StandardArgs.class,
         new Command() {
           @Override public void execute() {
-            assertThat(StandardArgs.RANGE.get(), is(Ranges.closed(1, 5)));
+            assertThat(StandardArgs.RANGE.get(), is(com.google.common.collect.Range.closed(1, 5)));
           }
         },
         "range", "1-5");
@@ -644,11 +653,15 @@ public class ArgScannerTest {
   public static class NameClashA {
     @CmdLine(name = "string", help = "help")
     static final Arg<String> STRING = Arg.create(null);
+    @CmdLine(name = "boolean", help = "help")
+    static final Arg<Boolean> BOOLEAN = Arg.create(true);
   }
 
   public static class NameClashB {
     @CmdLine(name = "string", help = "help")
     static final Arg<String> STRING_1 = Arg.create(null);
+    @CmdLine(name = "boolean", help = "help")
+    static final Arg<Boolean> BOOLEAN_1 = Arg.create(true);
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -656,11 +669,22 @@ public class ArgScannerTest {
     parse(ImmutableList.of(NameClashA.class, NameClashB.class), "-string=blah");
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testDisallowsShortNegNameOnArgCollision() {
+    parse(ImmutableList.of(NameClashA.class, NameClashB.class), "-no_boolean");
+  }
+
   @Test
   public void testAllowsCanonicalNameOnArgCollision() {
     // TODO(William Farner): Fix.
     parse(ImmutableList.of(NameClashA.class, NameClashB.class),
         "-" + NameClashB.class.getCanonicalName() + ".string=blah");
+  }
+
+  @Test
+  public void testAllowsCanonicalNegNameOnArgCollision() {
+    parse(ImmutableList.of(NameClashA.class, NameClashB.class),
+        "-" + NameClashB.class.getCanonicalName() + ".no_boolean");
   }
 
   public static class AmountContainer {
@@ -821,7 +845,7 @@ public class ArgScannerTest {
 
   private static boolean parse(Iterable<? extends Class<?>> scopes, String... args) {
     Predicate<Field> filter = Predicates.or(Iterables.transform(scopes, TO_SCOPE_PREDICATE));
-    PrintStream devNull = new PrintStream(new NullOutputStream());
+    PrintStream devNull = new PrintStream(ByteStreams.nullOutputStream());
     return new ArgScanner(devNull).parse(filter, Arrays.asList(args));
   }
 }

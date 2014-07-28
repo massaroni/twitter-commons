@@ -16,10 +16,24 @@
 
 python_library(
   name = "http",
-  sources = rglobs("*.py"),
+  sources = globs("*.py"),
   dependencies = [
     pants('src/python/twitter/common/lang'),
     pants('src/python/twitter/common/log'),
     pants('3rdparty/python:bottle'),
-  ]
+  ],
+  provides = setup_py(
+    name = 'twitter.common.http',
+    version = commons_version(),
+    description = 'twitter.common wrappers for bottle and simple diagnostics endpoints.',
+    url = 'https://github.com/twitter/commons',
+    license = 'Apache License, Version 2.0',
+    zip_safe = True,
+    classifiers = [
+      'Intended Audience :: Developers',
+      'License :: OSI Approved :: Apache Software License',
+      'Operating System :: OS Independent',
+      'Programming Language :: Python',
+    ]
+  )
 )

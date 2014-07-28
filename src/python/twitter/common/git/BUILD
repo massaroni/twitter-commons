@@ -18,6 +18,20 @@ python_library(
   name = 'git',
   sources = ['__init__.py'],
   dependencies = [
-    python_requirement('GitPython')
-  ]
+    pants('3rdparty/python:git-python'),
+  ],
+  provides = setup_py(
+    name = 'twitter.common.git',
+    version = commons_version(),
+    description = 'twitter.common library for interacting with Git.',
+    url = 'https://github.com/twitter/commons',
+    license = 'Apache License, Version 2.0',
+    zip_safe = True,
+    classifiers = [
+      'Intended Audience :: Developers',
+      'License :: OSI Approved :: Apache Software License',
+      'Operating System :: OS Independent',
+      'Programming Language :: Python',
+    ]
+  )
 )

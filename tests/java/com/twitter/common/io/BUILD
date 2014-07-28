@@ -14,15 +14,12 @@
 # limitations under the License.
 # ==================================================================================================
 
-from glob import glob
-
-
 java_tests(name = 'io',
   dependencies = [
-    pants('3rdparty:guava'),
-    pants('3rdparty:junit'),
-    pants('3rdparty:thrift'),
-    pants('3rdparty:tl4j'),
+    pants('3rdparty/jvm/com/google/guava'),
+    pants('3rdparty/jvm/junit'),
+    pants('3rdparty/jvm/org/apache/thrift'),
+    pants('3rdparty/jvm/com/google/testing:tl4j'),
     pants('src/java/com/twitter/common/base'),
     pants('src/java/com/twitter/common/io'),
     pants('src/java/com/twitter/common/io:base64zlibcodec'),
@@ -31,5 +28,5 @@ java_tests(name = 'io',
     pants('src/java/com/twitter/common/io:thrift'),
     pants('src/java/com/twitter/common/thrift:testing'),
   ],
-  sources = glob('*.java')
+  sources = globs('*.java')
 )

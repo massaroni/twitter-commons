@@ -14,22 +14,16 @@
 # limitations under the License.
 # ==================================================================================================
 
-java_tests(name = 'lifecycle',
-  dependencies = [
-    '3rdparty:easymock',
-    '3rdparty:guava',
-    '3rdparty:guice',
-    '3rdparty:junit',
+java_tests(name='lifecycle',
+  dependencies=[
+    '3rdparty/jvm/org/easymock',
+    '3rdparty/jvm/com/google/guava',
+    '3rdparty/jvm/com/google/inject:guice',
+    '3rdparty/jvm/junit',
     'src/java/com/twitter/common/application/modules:lifecycle',
     'src/java/com/twitter/common/application:action',
     'src/java/com/twitter/common/base',
-    'src/java/com/twitter/common/testing',
+    'src/java/com/twitter/common/testing/easymock',
   ],
-  sources = [ 'LifecycleModuleTest.java' ]
-)
-
-jar_library(name = 'all',
-  dependencies = [
-    ':lifecycle',
-  ]
+  sources=['LifecycleModuleTest.java']
 )

@@ -14,14 +14,11 @@
 # limitations under the License.
 # ==================================================================================================
 
-from glob import glob
-
-
 java_tests(name = 'collections',
   dependencies = [
-    '3rdparty:guava',
-    '3rdparty:junit',
-    'src/java/com/twitter/common/collections',
+    pants('3rdparty/jvm/com/google/guava'),
+    pants('3rdparty/jvm/junit'),
+    pants('src/java/com/twitter/common/collections'),
   ],
-  sources = glob('*.java'),
+  sources = globs('*.java'),
 )

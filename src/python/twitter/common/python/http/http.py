@@ -5,53 +5,63 @@ import socket
 import struct
 import time
 
-from twitter.common.dirutil import safe_delete, safe_mkdir, safe_mkdtemp
-from twitter.common.lang import Compatibility
-from twitter.common.quantity import Amount, Time
+from ..common import safe_delete, safe_mkdir, safe_mkdtemp
+from ..compatibility import PY2, PY3
+from .tracer import TRACER
 
-if Compatibility.PY3:
-  from http.client import parse_headers
+if PY3:
+  from http.client import parse_headers, HTTPException
+  from queue import Queue, Empty
   import urllib.error as urllib_error
   import urllib.parse as urlparse
   import urllib.request as urllib_request
   from urllib.request import addinfourl
 else:
-  from httplib import HTTPMessage
+  from httplib import HTTPMessage, HTTPException
+  from Queue import Queue, Empty
   from urllib import addinfourl
   import urllib2 as urllib_request
   import urllib2 as urllib_error
   import urlparse
-
-from .tracer import TRACER
 
 
 class Timeout(Exception):
   pass
 
 
+class FetchError(Exception):
+  """
+    Error occurred while fetching via HTTP
+
+    We raise this when we catch urllib or httplib errors because we don't want
+    to leak those implementation details to callers.
+  """
+
+
 def deadline(fn, *args, **kw):
   """Helper function to prevent fn(*args, **kw) from running more than
      a specified timeout.
 
-     Takes timeout= kwarg, which defaults to Amount(150, Time.MILLISECONDS)
+     Takes timeout= kwarg in seconds, which defaults to 150ms (0.150)
   """
-  from Queue import Queue, Empty
+  DEFAULT_TIMEOUT_SECS = 0.150
+
   from threading import Thread
   q = Queue(maxsize=1)
-  timeout = kw.pop('timeout', Amount(150, Time.MILLISECONDS))
+  timeout = kw.pop('timeout', DEFAULT_TIMEOUT_SECS)
   class AnonymousThread(Thread):
     def run(self):
       q.put(fn(*args, **kw))
   AnonymousThread().start()
   try:
-    return q.get(timeout=timeout.as_(Time.SECONDS))
+    return q.get(timeout=timeout)
   except Empty:
     raise Timeout
 
 
 class Web(object):
-  NS_TIMEOUT = Amount(5, Time.SECONDS)
-  CONN_TIMEOUT = Amount(1, Time.SECONDS)
+  NS_TIMEOUT_SECS = 5.0
+  CONN_TIMEOUT = 1.0
   SCHEME_TO_PORT = {
     'ftp': 21,
     'http': 80,
@@ -68,7 +78,7 @@ class Web(object):
     port = fullurl.port if fullurl.port else self.SCHEME_TO_PORT.get(fullurl.scheme, 80)
     try:
       conn = socket.create_connection(
-          (fullurl.hostname, port), timeout=(conn_timeout or self.CONN_TIMEOUT).as_(Time.SECONDS))
+          (fullurl.hostname, port), timeout=(conn_timeout or self.CONN_TIMEOUT))
       conn.close()
       return True
     except (socket.error, socket.timeout):
@@ -86,20 +96,20 @@ class Web(object):
     if not fullurl.scheme or not fullurl.netloc:
       return True
     try:
-      with TRACER.timed('Resolving', V=2):
-        if not deadline(self._resolves, fullurl, timeout=self.NS_TIMEOUT):
+      with TRACER.timed('Resolving %s' % fullurl.hostname, V=2):
+        if not deadline(self._resolves, fullurl, timeout=self.NS_TIMEOUT_SECS):
           TRACER.log('Failed to resolve %s' % url)
           return False
     except Timeout:
       TRACER.log('Timed out resolving %s' % fullurl.hostname)
       return False
-    with TRACER.timed('Connecting', V=2):
+    with TRACER.timed('Connecting to %s' % fullurl.hostname, V=2):
       return self._reachable(fullurl, conn_timeout=conn_timeout)
 
   def maybe_local_url(self, url):
     full_url = urlparse.urlparse(url)
     if full_url.scheme == '':
-      return 'file://' + url
+      return 'file://' + os.path.realpath(url)
     return url
 
   def open(self, url, conn_timeout=None, **kw):
@@ -107,10 +117,13 @@ class Web(object):
       Wrapper in front of urlopen that more gracefully handles odd network environments.
     """
     url = self.maybe_local_url(url)
-    with TRACER.timed('Fetching', V=1):
+    with TRACER.timed('Fetching %s' % url, V=1):
       if not self.reachable(url, conn_timeout=conn_timeout):
-        raise urllib_error.URLError('Could not reach %s within deadline.' % url)
-      return urllib_request.urlopen(url, **kw)
+        raise FetchError('Could not reach %s within deadline.' % url)
+      try:
+        return urllib_request.urlopen(url, **kw)
+      except (urllib_error.URLError, HTTPException) as exc:
+        raise FetchError(exc)
 
 
 class CachedWeb(object):
@@ -129,10 +142,11 @@ class CachedWeb(object):
     super(CachedWeb, self).__init__()
 
   def __contains__(self, url):
-    return self.age(url) > 0
+    age = self.age(url)
+    return age is not None and age > 0
 
   def translate_url(self, url):
-    return os.path.join(self._cache, hashlib.md5(url).hexdigest())
+    return os.path.join(self._cache, hashlib.md5(url.encode('utf8')).hexdigest())
 
   def translate_all(self, url):
     return ('%(tgt)s %(tgt)s.tmp %(tgt)s.headers %(tgt)s.headers.tmp' % {
@@ -164,9 +178,10 @@ class CachedWeb(object):
   def encode_url(self, url, conn_timeout=None):
     target, target_tmp, headers, headers_tmp = self.translate_all(url)
     with contextlib.closing(self.really_open(url, conn_timeout=conn_timeout)) as http_fp:
-      if http_fp.getcode() != 200:
+      # File urls won't have a response code, they'll either open or raise.
+      if http_fp.getcode() and http_fp.getcode() != 200:
         raise urllib_error.URLError('Non-200 response code from %s' % url)
-      with TRACER.timed('Caching', V=2):
+      with TRACER.timed('Caching %s' % url, V=2):
         with open(target_tmp, 'wb') as disk_fp:
           disk_fp.write(http_fp.read())
         with open(headers_tmp, 'wb') as headers_fp:
@@ -177,11 +192,11 @@ class CachedWeb(object):
 
   def decode_url(self, url):
     target, _, headers, _ = self.translate_all(url)
-    headers_fp = open(headers)
+    headers_fp = open(headers, 'rb')
     code, = struct.unpack('>h', headers_fp.read(2))
     def make_headers(fp):
-      return HTTPMessage(fp) if Compatibility.PY2 else parse_headers(fp)
-    return addinfourl(open(target), make_headers(headers_fp), url, code)
+      return HTTPMessage(fp) if PY2 else parse_headers(fp)
+    return addinfourl(open(target, 'rb'), make_headers(headers_fp), url, code)
 
   def clear_url(self, url):
     for path in self.translate_all(url):
@@ -198,11 +213,11 @@ class CachedWeb(object):
   def open(self, url, ttl=None, conn_timeout=None):
     """Return a file-like object with the content of the url."""
     expired = self.expired(url, ttl=ttl)
-    with TRACER.timed('Opening %s' % ('(cached)' if not expired else ''), V=1):
+    with TRACER.timed('Opening %s' % ('(cached)' if not expired else '(uncached)'), V=1):
       if expired:
         try:
           self.cache(url, conn_timeout=conn_timeout)
-        except urllib_error.URLError:
+        except (urllib_error.URLError, HTTPException) as exc:
           if not self._failsoft or url not in self:
-            raise
+            raise FetchError(exc)
       return self.decode_url(url)

@@ -18,8 +18,23 @@ python_library(
   name = 'fs',
   sources = globs('*.py'),
   dependencies = [
-        pants('src/python/twitter/common'),
-        pants("src/python/twitter/common/string"),
-        pants('src/python/twitter/common/util')
-        ]
+      pants("src/python/twitter/common/contextutil"),
+      pants("src/python/twitter/common/quantity"),
+      pants("src/python/twitter/common/string"),
+      pants('src/python/twitter/common/util'),
+  ],
+  provides = setup_py(
+    name = 'twitter.common.fs',
+    version = commons_version(),
+    description = 'Filesystem utilities for twitter.',
+    url = 'https://github.com/twitter/commons/tree/master/src/python/twitter/common/fs',
+    license = 'Apache License, Version 2.0',
+    zip_safe = True,
+    classifiers = [
+      'Intended Audience :: Developers',
+      'License :: OSI Approved :: Apache Software License',
+      'Operating System :: OS Independent',
+      'Programming Language :: Python',
+    ]
+  )
 )

@@ -14,11 +14,27 @@
 # limitations under the License.
 # ==================================================================================================
 
+
+jvm_binary(
+  name = 'bin',
+  main = 'com.twitter.common.args.Arg',
+  dependencies = [
+    ':args',
+  ]
+)
+
+jvm_app(
+  name="app",
+  binary=":bin",
+  bundles=[]
+)
+
 APT_SOURCES = globs('apt/*.java')
 CORE_SOURCES = [
  'Arg.java',
  'ArgParser.java',
  'CmdLine.java',
+ 'NoParser.java',
  'Parser.java',
  'ParserOracle.java',
  'Positional.java',
@@ -34,8 +50,8 @@ annotation_processor(name = 'core',
     repo = 'build-support/commons/ivy:public',
   ),
   dependencies = [
-    '3rdparty:guava',
-    '3rdparty:jsr305',
+    '3rdparty/jvm/com/google/guava',
+    '3rdparty/jvm/com/google/code/findbugs:jsr305',
   ],
   sources = CORE_SOURCES,
 )
@@ -47,9 +63,9 @@ annotation_processor(name = 'apt',
     repo = 'build-support/commons/ivy:public',
   ),
   dependencies = [
-    '3rdparty:commons-lang',
-    '3rdparty:guava',
-    '3rdparty:jsr305',
+    '3rdparty/jvm/commons-lang',
+    '3rdparty/jvm/com/google/guava',
+    '3rdparty/jvm/com/google/code/findbugs:jsr305',
     ':core',
   ],
   sources = APT_SOURCES,
@@ -63,7 +79,7 @@ java_library(name = 'args',
     repo = 'build-support/commons/ivy:public',
   ),
   dependencies = [
-    '3rdparty:guava',
+    '3rdparty/jvm/com/google/guava',
     'src/java/com/twitter/common/base',
     'src/java/com/twitter/common/net:util',
     'src/java/com/twitter/common/quantity',
@@ -80,8 +96,8 @@ java_library(name = 'duration_parser',
     repo = 'build-support/commons/ivy:public',
   ),
   dependencies = [
-    '3rdparty:guava',
-    '3rdparty:util-core',
+    '3rdparty/jvm/com/google/guava',
+    '3rdparty/jvm/com/twitter:util-core',
     ':args',
   ],
   sources = DURATION_PARSER

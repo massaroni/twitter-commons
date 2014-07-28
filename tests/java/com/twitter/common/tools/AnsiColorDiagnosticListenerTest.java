@@ -20,12 +20,12 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.twitter.common.testing.EasyMockTest;
+import com.twitter.common.testing.easymock.EasyMockTest;
 
 import static org.easymock.EasyMock.anyBoolean;
 import static org.easymock.EasyMock.expect;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class AnsiColorDiagnosticListenerTest extends EasyMockTest {
   private static final Pattern NEWLINE = Pattern.compile("\r?\n", Pattern.MULTILINE);

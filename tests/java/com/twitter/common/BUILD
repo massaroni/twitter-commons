@@ -14,17 +14,19 @@
 # limitations under the License.
 # ==================================================================================================
 
-jar_library(name = 'small',
+dependencies(name = 'small',
   dependencies = [
-    pants('3rdparty:junit'),
     pants('tests/java/com/twitter/common/application'),
-    pants('tests/java/com/twitter/common/application/modules:all'),
+    pants('tests/java/com/twitter/common/application/modules:lifecycle'),
     pants('tests/java/com/twitter/common/args:small'),
     pants('tests/java/com/twitter/common/base'),
     pants('tests/java/com/twitter/common/collections'),
     pants('tests/java/com/twitter/common/inject'),
+    pants('tests/java/com/twitter/common/jar/tool'),
+    pants('tests/java/com/twitter/common/junit/runner'),
     pants('tests/java/com/twitter/common/io'),
     pants('tests/java/com/twitter/common/logging'),
+    pants('tests/java/com/twitter/common/logging/julbridge'),
     pants('tests/java/com/twitter/common/memcached'),
     pants('tests/java/com/twitter/common/metrics'),
     pants('tests/java/com/twitter/common/net'),
@@ -35,15 +37,14 @@ jar_library(name = 'small',
     pants('tests/java/com/twitter/common/runtime'),
     pants('tests/java/com/twitter/common/stats'),
     pants('tests/java/com/twitter/common/testing'),
+    pants('tests/java/com/twitter/common/testing/easymock'),
     pants('tests/java/com/twitter/common/text'),
     pants('tests/java/com/twitter/common/thrift'),
     pants('tests/java/com/twitter/common/util'),
     pants('tests/java/com/twitter/common/util/caching'),
+    pants('tests/java/com/twitter/common/util/concurrent'),
     pants('tests/java/com/twitter/common/util/templating'),
     pants('tests/java/com/twitter/common/zookeeper:small'),
-
-    # TODO(jsirois): conflict with spiderduck -> finagle -> new ostrich here - upgrade dep.
-    #'tests/scala/com/twitter/common/stats',
 
     # No tests for these, adding deps to support a single target for --ide builds with comprehensive
     # deps
@@ -53,26 +54,26 @@ jar_library(name = 'small',
   ],
 )
 
-jar_library(name = 'medium',
+dependencies(name = 'medium',
   dependencies = [
-    'tests/java/com/twitter/common/args:medium',
-    'tests/java/com/twitter/common/zookeeper:medium',
+    pants('tests/java/com/twitter/common/args:medium'),
+    pants('tests/java/com/twitter/common/zookeeper:medium'),
   ]
 )
 
-jar_library(name = 'large',
+dependencies(name = 'large',
   dependencies = [
-    'tests/java/com/twitter/common/zookeeper:large',
+    pants('tests/java/com/twitter/common/zookeeper:large'),
   ]
 )
 
-jar_library(name = 'all',
+dependencies(name = 'all',
   dependencies = [
-    ':small',
-    ':medium',
-    ':large',
+    pants(':large'),
+    pants(':medium'),
+    pants(':small'),
   ]
 )
 
 # TODO(John Sirois): kill this legacy alias with a deprecation cycle
-jar_library(name = 'all-tests', dependencies = [ ':all' ])
+dependencies(name = 'all-tests', dependencies = [ pants(':all') ])
